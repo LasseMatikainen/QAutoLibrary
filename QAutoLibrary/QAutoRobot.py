@@ -8,14 +8,10 @@ from QAutoLibrary import FileOperations
 from QAutoLibrary.QAutoSelenium import CommonUtils
 
 from QAutoLibrary.extension.screencast.vlc_recorder import VlcRecorder
-from QAutoLibrary.extension.testdata.testdata import get_global_testdata, TestData
-from QAutoLibrary.extension.parsers.parameter_parser import set_parameter_file
 from QAutoLibrary.extension.util.GlobalUtils import Singleton
 
-DefaultDirectory = ["pagemodel", "common_lib"]
-MethodNameStrip = ["component_", "common_lib_"]
+DefaultDirectory = ["pagemodel"]
 TestReportFolder = "test_reports"
-WarningNoTestData = "QautoRobot: Not using TestData"
 WarningMethodAlreadyBound = '\nQautoRobot: Attribute "{0}" already bound:\n{1} (bound)\n{2} (not bound)\n'
 WarningDirectoryNotFound = "QautoRobot: Method directory could not be found: "
 LibraryScope = 'TEST SUITE'
@@ -30,14 +26,11 @@ class QAutoRobot(CommonUtils):
     ROBOT_LIBRARY_SCOPE = LibraryScope
     KEYWORDS = {}
 
-    def __init__(self, testdata=None, *shared_directory):
+    def __init__(self, *shared_directory):
         """
         During initilization adds dynamically all library methods to library
         """
         super(QAutoRobot, self).__init__()
-
-        # Test data file to use in library
-        self.test_data_file = testdata
 
         # Set directory's to add
         self.default_directory = DefaultDirectory
@@ -76,13 +69,6 @@ class QAutoRobot(CommonUtils):
         """
         sys.modules[LibraryAttributeName] = self
 
-        # Set test data methods to library if test data file set
-        if self.test_data_file:
-            set_parameter_file(self.test_data_file)
-            self.set_testdata_methods()
-        else:
-            self.warning(WarningNoTestData)
-
         # Set all methods that are used in file operations
         self.set_file_operation_methods()
 
@@ -95,7 +81,7 @@ class QAutoRobot(CommonUtils):
 
     def set_file_operation_methods(self):
         """
-        Set testdata methods from global testdata to class
+        Set file methods from file operations to class
 
         :return: None
         """
@@ -103,23 +89,6 @@ class QAutoRobot(CommonUtils):
         for _method_name in method_names:
             # Get method
             _method = getattr(FileOperations, _method_name)
-            # Set testdata method into library
-            self.set_attribute(self, _method_name, _method)
-
-    def set_testdata_methods(self):
-        """
-        Set testdata methods from global testdata to class
-
-        :return: None
-        """
-        # Get global testdata for adding method into library
-        testdata = get_global_testdata()
-
-        method_names = self.get_class_method_names(TestData)
-        for _method_name in method_names:
-            # Get method
-            _method = getattr(testdata, _method_name)
-            # Set testdata method into library
             self.set_attribute(self, _method_name, _method)
 
     def remove_module_methods(self, directory):
@@ -306,15 +275,6 @@ class QAutoRobot(CommonUtils):
         except OSError as e:
             self.warning(WarningDirectoryNotFound + str(e))
             return []
-
-    @staticmethod
-    def get_testdata():
-        """
-        Get global test data object
-
-        :return: Global testdata object
-        """
-        return get_global_testdata()
 
     @staticmethod
     def get_failure_image_path(test_case):
